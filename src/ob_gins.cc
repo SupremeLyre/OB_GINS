@@ -70,13 +70,33 @@ int main(int argc, char *argv[]) {
         std::cout << "Failed to read configuration file" << std::endl;
         return -1;
     }
-
+    bool manual_init = config["manual_init"].as<bool>();
+    // 通过配置文件获取参数的模式
+    int starttime{}, endtime{-1};
+    Vector3d initvel, initatt, initbg, initba;
     // 时间信息
     // processing time
-    int windows   = config["windows"].as<int>();
-    int starttime = config["starttime"].as<int>();
-    int endtime   = config["endtime"].as<int>();
+    if (manual_init) {
+        starttime = config["starttime"].as<int>();
+        endtime   = config["endtime"].as<int>();
+        // 初始化信息
+        // initialization
+        vec = config["initvel"].as<std::vector<double>>();
+        initvel(vec.data());
+        vec = config["initatt"].as<std::vector<double>>();
+        initatt(vec.data());
+        initatt *= D2R;
 
+        vec = config["initgb"].as<std::vector<double>>();
+        initbg(vec.data());
+        initbg *= D2R / 3600.0;
+        vec = config["initab"].as<std::vector<double>>();
+        initba(vec.data());
+        initba *= 1.0e-5;
+    }
+    // 滑窗大小
+    // sliding window size
+    int windows = config["windows"].as<int>();
     // 迭代次数
     // number of iterations
     int num_iterations = config["num_iterations"].as<int>();
@@ -84,21 +104,6 @@ int main(int argc, char *argv[]) {
     // 进行GNSS粗差检测
     // Do GNSS outlier culling
     bool is_outlier_culling = config["is_outlier_culling"].as<bool>();
-
-    // 初始化信息
-    // initialization
-    vec = config["initvel"].as<std::vector<double>>();
-    Vector3d initvel(vec.data());
-    vec = config["initatt"].as<std::vector<double>>();
-    Vector3d initatt(vec.data());
-    initatt *= D2R;
-
-    vec = config["initgb"].as<std::vector<double>>();
-    Vector3d initbg(vec.data());
-    initbg *= D2R / 3600.0;
-    vec = config["initab"].as<std::vector<double>>();
-    Vector3d initba(vec.data());
-    initba *= 1.0e-5;
 
     // 数据文件
     // data file
@@ -111,15 +116,6 @@ int main(int argc, char *argv[]) {
     // 是否考虑地球自转
     // consider the Earth's rotation
     bool isearth = config["isearth"].as<bool>();
-
-    GnssFileLoader gnssfile(gnsspath);
-    ImuFileLoader imufile(imupath, imudatalen, imudatarate);
-    FileSaver navfile(outputpath + "/OB_GINS_TXT.nav", 11, FileSaver::TEXT);
-    FileSaver errfile(outputpath + "/OB_GINS_IMU_ERR.bin", 7, FileSaver::BINARY);
-    if (!imufile.isOpen() || !navfile.isOpen() || !navfile.isOpen() || !errfile.isOpen()) {
-        std::cout << "Failed to open data file" << std::endl;
-        return -1;
-    }
 
     // 安装参数
     // installation parameters
@@ -155,6 +151,15 @@ int main(int argc, char *argv[]) {
     int outageperiod = config["outageperiod"].as<int>();
 
     auto gnssthreshold = config["gnssthreshold"].as<double>();
+
+    GnssFileLoader gnssfile(gnsspath);
+    ImuFileLoader imufile(imupath, imudatalen, imudatarate);
+    FileSaver navfile(outputpath + "/OB_GINS_TXT.pos", 11, FileSaver::TEXT);
+    FileSaver errfile(outputpath + "/OB_GINS_IMU_ERR.txt", 7, FileSaver::TEXT);
+    if (!imufile.isOpen() || !navfile.isOpen() || !navfile.isOpen() || !errfile.isOpen()) {
+        std::cout << "Failed to open data file" << std::endl;
+        return -1;
+    }
 
     // 数据文件调整
     // data alignment

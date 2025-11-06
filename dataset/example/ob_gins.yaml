@@ -2,10 +2,12 @@
 
 # 数据文件
 # Data files
-imufile: "dataset/ADIS16465.txt"
-gnssfile: "dataset/GNSS_RTK.pos"
-outputpath: "dataset/"
-
+imufile: "dataset/example/ADIS16465.txt"
+gnssfile: "dataset/example/GNSS_RTK.pos"
+outputpath: "dataset/example/rtkins/"
+# 手动指定初始状态
+# Manual initialization
+manual_init: true
 # 时间信息, s
 # Processing time parameters
 windows: 30
@@ -64,7 +66,7 @@ imumodel:
 
 # GNSS仿真中断配置
 # GNSS outage parameters
-isuseoutage: true
+isuseoutage: false
 outagetime: 357900
 outagelen: 60
 outageperiod: 150

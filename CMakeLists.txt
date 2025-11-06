@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(ob_gins)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -12,17 +12,15 @@ else ()
 endif ()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE SOURCE
         src/ob_gins.cc
-        src/fileio/fileloader.cc
-        src/fileio/filesaver.cc
-        src/factors/pose_manifold.cc
-        src/preintegration/preintegration_base.cc
-        src/preintegration/preintegration_normal.cc
-        src/preintegration/preintegration_earth.cc
-        src/preintegration/preintegration_odo.cc
-        src/preintegration/preintegration_earth_odo.cc)
+        src/common/*.cc
+        src/fileio/*.cc
+        src/factors/*.cc
+        src/preintegration/*.cc
+)
 
 include_directories(${PROJECT_SOURCE_DIR})
 add_executable(${PROJECT_NAME} ${SOURCE})

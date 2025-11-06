@@ -28,6 +28,8 @@
 
 #include "marginalization_info.h"
 
+using std::vector;
+
 class MarginalizationFactor : public ceres::CostFunction {
 
 public:
