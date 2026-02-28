@@ -3,13 +3,9 @@ project(ob_gins)
 
 set(CMAKE_CXX_STANDARD 20)
 
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
-endif ()
+if(MSVC)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:8388608")
+endif()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -24,23 +20,31 @@ file(GLOB_RECURSE SOURCE
 
 include_directories(${PROJECT_SOURCE_DIR})
 add_executable(${PROJECT_NAME} ${SOURCE})
-
+if(MSVC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+endif()
 # Eigen3
+set(Eigen3_DIR ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/share/eigen3/cmake)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 # yaml-cpp
-find_package(yaml-cpp REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${YAML_CPP_LIBRARIES})
+set(YAML_CPP_BUILD_TOOLS OFF)
+add_subdirectory(src/thirdparty/yaml-cpp)
+target_link_libraries(${PROJECT_NAME} yaml-cpp)
 
 # abseil
 set(ABSL_PROPAGATE_CXX_STD true)
-add_subdirectory(src/thirdparty/abseil-cpp abseil-cpp)
+add_subdirectory(src/thirdparty/abseil-cpp)
 target_link_libraries(${PROJECT_NAME}
         absl::strings
         absl::str_format
         absl::time)
 
 # Ceres
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    set(Ceres_DIR ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/lib/cmake/Ceres)
+    set(glog_DIR ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/lib/cmake/glog)
+endif()
 find_package(Ceres REQUIRED)
-target_link_libraries(${PROJECT_NAME} ${CERES_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} Ceres::ceres)
