@@ -1,0 +1,18 @@
+[submodule "src/thirdparty/eigen"]
+	path = src/thirdparty/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "src/thirdparty/yaml-cpp"]
+	path = src/thirdparty/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "src/thirdparty/gflags"]
+	path = src/thirdparty/gflags
+	url = https://github.com/gflags/gflags.git
+[submodule "src/thirdparty/glog"]
+	path = src/thirdparty/glog
+	url = https://github.com/google/glog.git
+[submodule "src/thirdparty/suitesparse-metis-for-windows"]
+	path = src/thirdparty/suitesparse-metis-for-windows
+	url = https://github.com/jlblancoc/suitesparse-metis-for-windows.git
+[submodule "ceres"]
+	path = src/thirdparty/ceres-solver
+	url = https://ceres-solver.googlesource.com/ceres-solver
