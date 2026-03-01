@@ -2,3 +2,5 @@ build/
 naverror1.txt
 figs/
 dataset/202*/
+bin/
+lib/

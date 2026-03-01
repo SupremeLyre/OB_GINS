@@ -53,3 +53,17 @@ endif()
 
 find_package(Ceres REQUIRED)
 target_link_libraries(${PROJECT_NAME} Ceres::ceres)
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/bin/libglog.dll
+        ${EXECUTABLE_OUTPUT_PATH}/libglog.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/bin/libceres.dll
+        ${EXECUTABLE_OUTPUT_PATH}/libceres.dll
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/src/thirdparty/Ceres/bin/libgflags.dll
+        ${EXECUTABLE_OUTPUT_PATH}/libgflags.dll
+    # 如有其它依赖 DLL，继续添加
+)
+endif()
