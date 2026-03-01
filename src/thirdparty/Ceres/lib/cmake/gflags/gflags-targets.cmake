@@ -61,7 +61,7 @@ add_library(gflags::gflags_shared SHARED IMPORTED)
 set_target_properties(gflags::gflags_shared PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "GFLAGS_IS_A_DLL=1"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "shlwapi.lib"
+  INTERFACE_LINK_LIBRARIES "-lpthread;shlwapi.lib"
 )
 
 # Create imported target gflags::gflags_nothreads_shared
@@ -79,7 +79,7 @@ add_library(gflags::gflags_static STATIC IMPORTED)
 set_target_properties(gflags::gflags_static PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "GFLAGS_IS_A_DLL=0"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "shlwapi.lib"
+  INTERFACE_LINK_LIBRARIES "-lpthread;shlwapi.lib"
 )
 
 # Create imported target gflags::gflags_nothreads_static

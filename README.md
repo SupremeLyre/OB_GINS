@@ -53,6 +53,8 @@ sudo apt install gcc-8 g++-8
 # sudo apt install clang
 ```
 
+> Now I add the support for **MinGW-w64 WinLibs** on Windows. I compile ceres and glog with MinGW-w64 14.2.0. Please [install MinGW-w64 14.2.0](https://github.com/brechtsanders/winlibs_mingw/releases/download/14.2.0posix-18.1.8-12.0.0-ucrt-r1/winlibs-x86_64-posix-seh-gcc-14.2.0-llvm-18.1.8-mingw-w64ucrt-12.0.0-r1.zip) and add it to the PATH environment variable. On Windows, you just need open the project in VS Code and build it using C++/CMake VSCode extension.
+
 ### 1.2 Ceres
 
 We use Ceres Solver to solve the non-linear least squares problem. The supported version is **Ceres Solver 2.0.0 or 2.1.0**. Please follow [Ceres installation instructions](http://ceres-solver.org/installation.html).

@@ -84,7 +84,7 @@
 // If defined, Ceres was compiled with a version MSVC >= 2005 which
 // deprecated the standard POSIX names for bessel functions, replacing them
 // with underscore prefixed versions (e.g. j0() -> _j0()).
-#define CERES_MSVC_USE_UNDERSCORE_PREFIXED_BESSEL_FUNCTIONS
+// #define CERES_MSVC_USE_UNDERSCORE_PREFIXED_BESSEL_FUNCTIONS
 
 #if defined(CERES_USE_OPENMP)
 #if defined(CERES_USE_CXX_THREADS) || defined(CERES_NO_THREADS)

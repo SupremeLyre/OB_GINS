@@ -8,12 +8,12 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 # Import target "glog::glog" for configuration "Release"
 set_property(TARGET glog::glog APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
 set_target_properties(glog::glog PROPERTIES
-  IMPORTED_IMPLIB_RELEASE "${_IMPORT_PREFIX}/lib/glog.lib"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/bin/glog.dll"
+  IMPORTED_IMPLIB_RELEASE "${_IMPORT_PREFIX}/lib/libglog.dll.a"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/bin/libglog.dll"
   )
 
 list(APPEND _cmake_import_check_targets glog::glog )
-list(APPEND _cmake_import_check_files_for_glog::glog "${_IMPORT_PREFIX}/lib/glog.lib" "${_IMPORT_PREFIX}/bin/glog.dll" )
+list(APPEND _cmake_import_check_files_for_glog::glog "${_IMPORT_PREFIX}/lib/libglog.dll.a" "${_IMPORT_PREFIX}/bin/libglog.dll" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

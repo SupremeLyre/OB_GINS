@@ -36,9 +36,11 @@
 
 #include <absl/strings/str_format.h>
 #include <absl/time/clock.h>
+#include <cstdint>
 #include <deque>
 #include <iomanip>
 #include <yaml-cpp/yaml.h>
+
 
 #define INTEGRATION_LENGTH 1.0
 #define MINIMUM_INTERVAL 0.001
@@ -482,10 +484,11 @@ int main(int argc, char *argv[]) {
 
                     // 数据指针调整
                     // get new pointers
-                    std::unordered_map<long, double *> address;
+
+                    std::unordered_map<std::uintptr_t, double *> address;
                     for (size_t k = 1; k <= preintegrationlist.size(); k++) {
-                        address[reinterpret_cast<long>(statedatalist[k].pose)] = statedatalist[k - 1].pose;
-                        address[reinterpret_cast<long>(statedatalist[k].mix)]  = statedatalist[k - 1].mix;
+                        address[reinterpret_cast<std::uintptr_t>(statedatalist[k].pose)] = statedatalist[k - 1].pose;
+                        address[reinterpret_cast<std::uintptr_t>(statedatalist[k].mix)]  = statedatalist[k - 1].mix;
                     }
                     last_marginalization_parameter_blocks = marginalization_info->getParamterBlocks(address);
                     last_marginalization_info             = std::move(marginalization_info);
