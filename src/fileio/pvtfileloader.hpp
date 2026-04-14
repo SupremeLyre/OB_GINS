@@ -1,10 +1,11 @@
 #pragma once
+#include "sensors_provider.hpp"
 #include "src/common/angle.h"
 #include "src/common/types.h"
 #include "src/fileio/fileloader.h"
 #include <array>
 #include <string>
-class PvtFileLoader : public FileLoader {
+class PvtFileLoader : public IGnssFileLoader {
 public:
     PvtFileLoader() = delete;
     explicit PvtFileLoader(const string &filename, int columns = 19) {

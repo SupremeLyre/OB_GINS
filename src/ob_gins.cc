@@ -32,6 +32,9 @@
 #include "src/factors/gnss_factor.h"
 #include "src/factors/marginalization_factor.h"
 #include "src/factors/pose_manifold.h"
+#include "src/fileio/adisbinaryloader.hpp"
+#include "src/fileio/pppfileloader.hpp"
+#include "src/fileio/pvtfileloader.hpp"
 #include "src/preintegration/imu_error_factor.h"
 #include "src/preintegration/preintegration.h"
 #include "src/preintegration/preintegration_factor.h"
@@ -49,7 +52,7 @@
 int isNeedInterpolation(const IMU &imu0, const IMU &imu1, double mid);
 void imuInterpolation(const IMU &imu01, IMU &imu00, IMU &imu11, double mid);
 
-void writeNavResult(double time, const Vector3d &origin, const IntegrationState &state, FileSaver &navfile,
+void writeNavResult(int week, double time, const Vector3d &origin, const IntegrationState &state, FileSaver &navfile,
                     FileSaver &errfile);
 
 int main(int argc, char *argv[]) {
@@ -84,17 +87,17 @@ int main(int argc, char *argv[]) {
         endtime   = config["endtime"].as<int>();
         // 初始化信息
         // initialization
-        vec = config["initvel"].as<std::vector<double>>();
-        initvel(vec.data());
-        vec = config["initatt"].as<std::vector<double>>();
-        initatt(vec.data());
+        vec     = config["initvel"].as<std::vector<double>>();
+        initvel = Vector3d(vec.data());
+        vec     = config["initatt"].as<std::vector<double>>();
+        initatt = Vector3d(vec.data());
         initatt *= D2R;
 
-        vec = config["initgb"].as<std::vector<double>>();
-        initbg(vec.data());
+        vec    = config["initgb"].as<std::vector<double>>();
+        initbg = Vector3d(vec.data());
         initbg *= D2R / 3600.0;
-        vec = config["initab"].as<std::vector<double>>();
-        initba(vec.data());
+        vec    = config["initab"].as<std::vector<double>>();
+        initba = Vector3d(vec.data());
         initba *= 1.0e-5;
     }
     // 滑窗大小
@@ -167,13 +170,19 @@ int main(int argc, char *argv[]) {
     // 声明基类的智能指针
     std::unique_ptr<IGnssFileLoader> gnssfile;
     std::unique_ptr<IImuFileLoader> imufile;
-    if(gnss_loader_type == "resppp") {
+    if (gnss_loader_type == "resppp") {
         gnssfile = std::make_unique<ResPppFileLoader>(gnsspath);
+    } else if (gnss_loader_type == "pwjppp") {
+        gnssfile = std::make_unique<PPPFileLoader>(gnsspath);
+    } else if (gnss_loader_type == "pvt") {
+        gnssfile = std::make_unique<PvtFileLoader>(gnsspath);
     } else {
         gnssfile = std::make_unique<GnssFileLoader>(gnsspath);
     }
-    if(imu_loader_type == "adis") {
+    if (imu_loader_type == "adis") {
         imufile = std::make_unique<AdisFileLoader>(imupath, imudatalen, imudatarate);
+    } else if (imu_loader_type == "adisbin") {
+        imufile = std::make_unique<AdisBinaryLoader>(imupath, imudatalen, imudatarate);
     } else {
         imufile = std::make_unique<ImuFileLoader>(imupath, imudatalen, imudatarate);
     }
@@ -211,7 +220,7 @@ int main(int argc, char *argv[]) {
     std::vector<IntegrationStateData> statedatalist(windows + 1);
     std::deque<std::shared_ptr<PreintegrationBase>> preintegrationlist;
     std::deque<GNSS> gnsslist;
-    std::deque<double> timelist;
+    std::deque<std::pair<int, double>> timelist;
 
     Preintegration::PreintegrationOptions preintegration_options = Preintegration::getOptions(isuseodo, isearth);
 
@@ -234,7 +243,7 @@ int main(int argc, char *argv[]) {
     gnsslist.push_back(gnss);
 
     double sow = round(gnss.time);
-    timelist.push_back(sow);
+    timelist.push_back({gnss.week, sow});
 
     // 初始预积分
     // Initial preintegration
@@ -312,7 +321,7 @@ int main(int argc, char *argv[]) {
 
             // 下一个积分节点
             // next time node
-            timelist.push_back(sow);
+            timelist.push_back({gnss.week, sow});
             sow += INTEGRATION_LENGTH;
 
             // 当前整秒状态加入到滑窗中
@@ -354,7 +363,7 @@ int main(int argc, char *argv[]) {
                 for (const auto &gnss : gnsslist) {
                     auto factor = new GnssFactor(gnss, antlever);
                     for (size_t i = index; i <= preintegrationlist.size(); ++i) {
-                        if (fabs(gnss.time - timelist[i]) < MINIMUM_INTERVAL) {
+                        if (fabs(gnss.time - timelist[i].second) < MINIMUM_INTERVAL) {
                             auto id = problem.AddResidualBlock(factor, loss_function, statedatalist[i].pose);
                             gnss_residualblock_id.push_back(std::make_pair(gnss.time, id));
                             index++;
@@ -434,7 +443,7 @@ int main(int argc, char *argv[]) {
                     for (auto &gnss : gnsslist) {
                         auto factor = new GnssFactor(gnss, antlever);
                         for (size_t i = index; i <= preintegrationlist.size(); ++i) {
-                            if (fabs(gnss.time - timelist[i]) < MINIMUM_INTERVAL) {
+                            if (fabs(gnss.time - timelist[i].second) < MINIMUM_INTERVAL) {
                                 problem.AddResidualBlock(factor, nullptr, statedatalist[i].pose);
                                 index++;
                                 break;
@@ -493,7 +502,7 @@ int main(int argc, char *argv[]) {
                     // GNSS残差
                     // GNSS factors
                     {
-                        if (fabs(timelist[0] - gnsslist[0].time) < MINIMUM_INTERVAL) {
+                        if (fabs(timelist[0].second - gnsslist[0].time) < MINIMUM_INTERVAL) {
                             auto factor   = std::make_shared<GnssFactor>(gnsslist[0], antlever);
                             auto residual = std::make_shared<ResidualBlockInfo>(
                                 factor, nullptr, std::vector<double *>{statedatalist[0].pose}, std::vector<int>{});
@@ -520,7 +529,7 @@ int main(int argc, char *argv[]) {
                 // 滑窗处理
                 // sliding window
                 {
-                    if (lround(timelist[0]) == lround(gnsslist[0].time)) {
+                    if (lround(timelist[0].second) == lround(gnsslist[0].time)) {
                         gnsslist.pop_front();
                     }
                     timelist.pop_front();
@@ -539,7 +548,8 @@ int main(int argc, char *argv[]) {
             }
 
             // write result
-            writeNavResult(*timelist.rbegin(), station_origin, state_curr, navfile, errfile);
+            writeNavResult(timelist.rbegin()->first, timelist.rbegin()->second, station_origin, state_curr, navfile,
+                           errfile);
 
             // 新建立新的预积分
             // build a new preintegration object
@@ -547,7 +557,8 @@ int main(int argc, char *argv[]) {
                 Preintegration::createPreintegration(parameters, imu_pre, state_curr, preintegration_options));
         } else {
             auto integration = *preintegrationlist.rbegin();
-            writeNavResult(integration->endTime(), station_origin, integration->currentState(), navfile, errfile);
+            writeNavResult(timelist.rbegin()->first, integration->endTime(), station_origin,
+                           integration->currentState(), navfile, errfile);
         }
     }
 
@@ -562,7 +573,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void writeNavResult(double time, const Vector3d &origin, const IntegrationState &state, FileSaver &navfile,
+void writeNavResult(int week, double time, const Vector3d &origin, const IntegrationState &state, FileSaver &navfile,
                     FileSaver &errfile) {
     vector<double> result;
 
@@ -572,11 +583,10 @@ void writeNavResult(double time, const Vector3d &origin, const IntegrationState 
     Vector3d vel = state.v;
     Vector3d bg  = state.bg * R2D * 3600;
     Vector3d ba  = state.ba * 1e5;
-
-    {
+    if (fabs(time - (int) time) < 0.005) {
         result.clear();
 
-        result.push_back(0);
+        result.push_back(week);
         result.push_back(time);
         result.push_back(pos[0]);
         result.push_back(pos[1]);
