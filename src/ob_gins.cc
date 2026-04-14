@@ -602,7 +602,7 @@ void writeNavResult(int week, double time, const Vector3d &origin, const Integra
 
     {
         result.clear();
-
+        result.push_back(week);
         result.push_back(time);
         result.push_back(bg[0]);
         result.push_back(bg[1]);
