@@ -25,8 +25,9 @@
 
 #include "fileloader.h"
 #include "src/common/types.h"
+#include "sensors_provider.hpp"
 
-class ImuFileLoader : public FileLoader {
+class ImuFileLoader : public IImuFileLoader {
 
 public:
     ImuFileLoader() = delete;
@@ -62,6 +63,39 @@ public:
         }
 
         return imu_;
+    }
+
+    double starttime() {
+
+        double starttime;
+        std::streampos sp = filefp_.tellg();
+
+        filefp_.seekg(0, std::ios_base::beg);
+        starttime = load().front();
+        filefp_.seekg(sp, std::ios_base::beg);
+        return starttime;
+    }
+
+    double endtime() {
+
+        double endtime    = -1;
+        std::streampos sp = filefp_.tellg();
+
+        if (filetype_ == TEXT) {
+            filefp_.seekg(-2, std::ios_base::end);
+            char byte = 0;
+            auto pos  = filefp_.tellg();
+            do {
+                pos -= 1;
+                filefp_.seekg(pos);
+                filefp_.read(&byte, 1);
+            } while (byte != '\n');
+        } else {
+            filefp_.seekg(-columns_ * sizeof(double), std::ios_base::end);
+        }
+        endtime = load().front();
+        filefp_.seekg(sp, std::ios_base::beg);
+        return endtime;
     }
 
 private:

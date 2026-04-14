@@ -362,7 +362,7 @@ void PreintegrationEarthOdo::resetState(const IntegrationState &state, int num) 
     q0_ = current_state_.q;
 
     // 地球自转, 近似使用初始时刻位置
-    iewn_      = Earth::iewn(parameters_->station, current_state_.p);
+    iewn_      = Earth::wien(parameters_->station, current_state_.p);
     iewn_skew_ = Rotation::skewSymmetric(iewn_);
 
     pn_.clear();

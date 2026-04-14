@@ -20,6 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "fileio/adisfileloader.hpp"
+#include "fileio/respppfileloader.hpp"
 #include "src/common/earth.h"
 #include "src/common/types.h"
 
@@ -40,7 +42,6 @@
 #include <deque>
 #include <iomanip>
 #include <yaml-cpp/yaml.h>
-
 
 #define INTEGRATION_LENGTH 1.0
 #define MINIMUM_INTERVAL 0.001
@@ -153,12 +154,34 @@ int main(int argc, char *argv[]) {
     int outageperiod = config["outageperiod"].as<int>();
 
     auto gnssthreshold = config["gnssthreshold"].as<double>();
+    // 在 main 函数中，读取类型配置
+    std::string gnss_loader_type = "standard";
+    if (config["gnss_loader_type"]) {
+        gnss_loader_type = config["gnss_loader_type"].as<std::string>();
+    }
+    std::string imu_loader_type = "standard";
+    if (config["imu_loader_type"]) {
+        imu_loader_type = config["imu_loader_type"].as<std::string>();
+    }
 
-    GnssFileLoader gnssfile(gnsspath);
-    ImuFileLoader imufile(imupath, imudatalen, imudatarate);
+    // 声明基类的智能指针
+    std::unique_ptr<IGnssFileLoader> gnssfile;
+    std::unique_ptr<IImuFileLoader> imufile;
+    if(gnss_loader_type == "resppp") {
+        gnssfile = std::make_unique<ResPppFileLoader>(gnsspath);
+    } else {
+        gnssfile = std::make_unique<GnssFileLoader>(gnsspath);
+    }
+    if(imu_loader_type == "adis") {
+        imufile = std::make_unique<AdisFileLoader>(imupath, imudatalen, imudatarate);
+    } else {
+        imufile = std::make_unique<ImuFileLoader>(imupath, imudatalen, imudatarate);
+    }
+    // ResPppFileLoader gnssfile(gnsspath);
+    // AdisFileLoader imufile(imupath, imudatalen, imudatarate);
     FileSaver navfile(outputpath + "/OB_GINS_TXT.pos", 11, FileSaver::TEXT);
     FileSaver errfile(outputpath + "/OB_GINS_IMU_ERR.txt", 7, FileSaver::TEXT);
-    if (!imufile.isOpen() || !navfile.isOpen() || !navfile.isOpen() || !errfile.isOpen()) {
+    if (!imufile->isOpen() || !navfile.isOpen() || !navfile.isOpen() || !errfile.isOpen()) {
         std::cout << "Failed to open data file" << std::endl;
         return -1;
     }
@@ -168,12 +191,12 @@ int main(int argc, char *argv[]) {
     IMU imu_cur, imu_pre;
     do {
         imu_pre = imu_cur;
-        imu_cur = imufile.next();
+        imu_cur = imufile->next();
     } while (imu_cur.time < starttime);
 
     GNSS gnss;
     do {
-        gnss = gnssfile.next();
+        gnss = gnssfile->next();
     } while (gnss.time < starttime);
 
     // 初始位置, 求相对
@@ -219,7 +242,7 @@ int main(int argc, char *argv[]) {
         Preintegration::createPreintegration(parameters, imu_pre, state_curr, preintegration_options));
 
     // 读取下一个整秒GNSS
-    gnss                = gnssfile.next();
+    gnss                = gnssfile->next();
     parameters->gravity = Earth::gravity(gnss.blh);
     gnss.blh            = Earth::global2local(station_origin, gnss.blh);
 
@@ -231,7 +254,7 @@ int main(int argc, char *argv[]) {
     sow += INTEGRATION_LENGTH;
 
     while (true) {
-        if ((imu_cur.time > endtime) || imufile.isEof()) {
+        if ((imu_cur.time > endtime) || imufile->isEof()) {
             break;
         }
 
@@ -240,7 +263,7 @@ int main(int argc, char *argv[]) {
         preintegrationlist.back()->addNewImu(imu_cur);
 
         imu_pre = imu_cur;
-        imu_cur = imufile.next();
+        imu_cur = imufile->next();
 
         if (imu_cur.time > sow) {
             // 当前IMU数据时间等于GNSS数据时间, 读取新的GNSS
@@ -248,10 +271,10 @@ int main(int argc, char *argv[]) {
             if (fabs(gnss.time - sow) < MINIMUM_INTERVAL) {
                 gnsslist.push_back(gnss);
 
-                gnss = gnssfile.next();
+                gnss = gnssfile->next();
                 while ((gnss.std[0] > gnssthreshold) || (gnss.std[1] > gnssthreshold) ||
                        (gnss.std[2] > gnssthreshold)) {
-                    gnss = gnssfile.next();
+                    gnss = gnssfile->next();
                 }
 
                 // 中断配置
@@ -260,7 +283,7 @@ int main(int argc, char *argv[]) {
                     if (lround(gnss.time) == outagetime) {
                         std::cout << "GNSS outage at " << outagetime << " s" << std::endl;
                         for (int k = 0; k < outagelen; k++) {
-                            gnss = gnssfile.next();
+                            gnss = gnssfile->next();
                         }
                         outagetime += outageperiod;
                     }
@@ -268,7 +291,7 @@ int main(int argc, char *argv[]) {
 
                 parameters->gravity = Earth::gravity(gnss.blh);
                 gnss.blh            = Earth::global2local(station_origin, gnss.blh);
-                if (gnssfile.isEof()) {
+                if (gnssfile->isEof()) {
                     gnss.time = 0;
                 }
             }
@@ -281,7 +304,7 @@ int main(int argc, char *argv[]) {
                 preintegrationlist.back()->addNewImu(imu_cur);
 
                 imu_pre = imu_cur;
-                imu_cur = imufile.next();
+                imu_cur = imufile->next();
             } else if (isneed == 2) {
                 imuInterpolation(imu_cur, imu_pre, imu_cur, sow);
                 preintegrationlist.back()->addNewImu(imu_pre);
@@ -530,8 +553,8 @@ int main(int argc, char *argv[]) {
 
     navfile.close();
     errfile.close();
-    imufile.close();
-    gnssfile.close();
+    imufile->close();
+    gnssfile->close();
 
     auto te = absl::Now();
     std::cout << std::endl << std::endl << "Cost " << absl::ToDoubleSeconds(te - ts) << " s in total" << std::endl;

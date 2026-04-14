@@ -41,15 +41,15 @@ public:
             filefp_.close();
     }
 
-    void close() {
+    virtual void close() {
         filefp_.close();
     }
 
-    bool isOpen() {
+    virtual bool isOpen() {
         return filefp_.is_open();
     }
 
-    bool isEof() {
+    virtual bool isEof() {
         return filefp_.eof();
     }
 

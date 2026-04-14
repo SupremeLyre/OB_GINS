@@ -24,10 +24,11 @@
 #define GNSSFILELOADER_H
 
 #include "fileloader.h"
+#include "sensors_provider.hpp"
 #include "src/common/angle.h"
 #include "src/common/types.h"
 
-class GnssFileLoader : public FileLoader {
+class GnssFileLoader : public IGnssFileLoader {
 
 public:
     GnssFileLoader() = delete;

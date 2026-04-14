@@ -16,11 +16,7 @@ const IMU &AdisFileLoader::next() {
         imu_.week = temper.week;
         imu_.time = temper.tow;
         double dt = imu_.time - imu_pre_.time;
-        if (dt > 0.003) {
-            imu_.dt = dt;
-        } else {
-            imu_.dt = dt_;
-        }
+        imu_.dt   = dt_;
 #if 1
         imu_.dtheta << temper.gyr[1] * D2R * imu_.dt, temper.gyr[0] * D2R * imu_.dt, -temper.gyr[2] * D2R * imu_.dt;
         imu_.dvel << temper.acc[1] * imu_.dt * 9.80665, temper.acc[0] * imu_.dt * 9.80665,

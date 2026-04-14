@@ -1,6 +1,9 @@
 {
     "cmake.debugConfig": {
-        "args": ["./dataset/example/ob_gins.yaml"],
+        "args": [
+            // "./dataset/example/ob_gins.yaml",
+            "./dataset/20250318/ob_gins.yaml",
+        ],
         "cwd": "${workspaceFolder}",
     },
     "ROS2.distro": "jazzy",

@@ -1,4 +1,5 @@
 #pragma once
+#include "sensors_provider.hpp"
 #include "src/common/angle.h"
 #include "src/common/crc32.h"
 #include "src/common/types.h"
@@ -6,8 +7,8 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
-#include <string>
-class AdisBinaryLoader : public FileLoader {
+
+class AdisBinaryLoader : public IImuFileLoader {
 public:
     AdisBinaryLoader() = delete;
     explicit AdisBinaryLoader(const string &filename, int columns = 13, int rate = 100) {
